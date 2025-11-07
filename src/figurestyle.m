@@ -15,6 +15,7 @@ function figurestyle(fontsize)
     grid(ax, 'on');
     ax.XMinorGrid = 'off'; 
     ax.YMinorGrid = 'off'; 
+    ax.ZMinorGrid = 'off';
     lines = findall(ax, 'Type', 'Line');
     for i = 1:numel(lines)
         lines(i).LineWidth = 2.5;

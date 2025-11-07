@@ -1,14 +1,15 @@
-%% Section 5B Rational approximation with preassigned poles
+%% Section 5b Rational approximation with preassigned poles
 % We consider the basis 
 %       {-q_i / (x - q_i) }_{i=1}^{n_1} U {p_i(x)}_{i=1}^{n_2}
-% for approximation on [0,1].
-addpath('../'); clc; rng(0);
+% for approximation on [0,1].rng(0);
+addpath('../src'); clc; 
 
 %% Illustration of "u" for fixed degree
+rng(0);
 rhosampler = @(nbsamples) rand(nbsamples,1);
 weightedsampler = @(nbsamples, w) slicesample(rhosampler(1),nbsamples,"pdf",w);
 indfun = @(x) (x >= 0).*(x <= 1);
-integrator = @(f) integral(@(x) arrayevaluation(f,x),0,1,'RelTol',1e-2);
+integrator = @(f) mean(f(rhosampler(1000)));
 
 % n1 = 4, n2 = 1
 disp('--- refinement-based Christoffel sampling (RCS) ---');
@@ -54,23 +55,20 @@ invchristoffel3 = @(x) (vecnorm(R'\phi(x)').^2)';
 
 % plot
 xx = logspace(-10,0,1000)';
-f1 = figure;
+f1 = figure('Position',[200 200 500 450]);
 loglog(xx,u1(xx),'k'); hold on;
 loglog(xx,invchristoffel1(xx),'--k');
 loglog(xx,u2(xx),'k'); 
 loglog(xx,invchristoffel2(xx),'--k');
 loglog(xx,u3(xx),'k'); 
 loglog(xx,invchristoffel3(xx),'--k');
-legend('$u$ (RCS)','$k_n^\epsilon$ (dense grid method)', ...
-    'Location','southwest');
 xlabel('x');
 ylim([1e0,1e6]); xlim([1e-10,1]);
-figurestyle(22); 
-pos = f1.Position; pos(4) = 520; f1.Position = pos;   
-text(1e-9,10^(5.53),'$n_1 = 12, n_2 = 5$','Interpreter','latex','FontSize',20);
-text(1e-9,10^(4.38),'$n_1 = 8, n_2 = 3$','Interpreter','latex','FontSize',20);
-text(1e-9,10^(2.98),'$n_1 = 4, n_2 = 1$','Interpreter','latex','FontSize',20);
-% exportgraphics(f1, "lightningA.pdf", 'ContentType', 'vector');
+figurestyle(20); 
+text(1e-9,10^(5.5),'$n_1 = 12, n_2 = 5$','Interpreter','latex','FontSize',20);
+text(1e-9,10^(4.44),'$n_1 = 8, n_2 = 3$','Interpreter','latex','FontSize',20);
+text(1e-9,10^(3.28),'$n_1 = 4, n_2 = 1$','Interpreter','latex','FontSize',20);
+% exportgraphics(f1, "lightning_1.pdf", 'ContentType', 'vector');
 
 %% Convergence test
 n1list = 2:6:62;
@@ -84,7 +82,8 @@ warning('off'); % ill-conditioned matrices
 rhosampler = @(nbsamples) rand(nbsamples,1);
 weightedsampler = @(nbsamples, w) slicesample(rhosampler(1),nbsamples,"pdf",w); 
 indfun = @(x) (x >= 0).*(x <= 1);
-integrator = @(f) integral(@(x) arrayevaluation(f,x),0,1,'RelTol',1e-2);
+integrator = @(f) mean(f(rhosampler(1000)));
+rng(0);
 
 for i = 1:length(n1list)
     n1 = n1list(i)
@@ -112,6 +111,8 @@ for i = 1:length(n1list)
     end
 end
 
+dofs = n1list + round(2*sqrt(n1list));
+
 mean_curve = 10.^(mean(log10(errlist),2))';
 std_curve = std(log10(errlist),0,2)';
 curve_min = 10.^(log10(mean_curve) - std_curve);
@@ -121,20 +122,18 @@ std_curve_equi = std(log10(errlist_equi),0,2)';
 curve_min_equi = 10.^(log10(mean_curve_equi) - std_curve_equi);
 curve_max_equi = 10.^(log10(mean_curve_equi) + std_curve_equi);
 
-f2 = figure;
-semilogy(n1list,mean_curve_equi,'d-k','MarkerSize',10); hold on;
-fill([n1list fliplr(n1list)], [curve_min_equi, fliplr(curve_max_equi)], ...
+f2 = figure('Position',[200 200 500 450]);
+semilogy(dofs,mean_curve_equi,'^-k','MarkerSize',8,'MarkerFaceColor','k'); hold on;
+fill([dofs fliplr(dofs)], [curve_min_equi, fliplr(curve_max_equi)], ...
      'k', 'FaceAlpha', 0.08, 'EdgeColor', 'none', 'HandleVisibility','off');
-semilogy(n1list,mean_curve,'.-k','MarkerSize',25); 
-fill([n1list fliplr(n1list)], [curve_min, fliplr(curve_max)], ...
+semilogy(dofs,mean_curve,'.-k','MarkerSize',30); 
+fill([dofs fliplr(dofs)], [curve_min, fliplr(curve_max)], ...
      'k', 'FaceAlpha', 0.08, 'EdgeColor', 'none');
-xlabel('$n_1$ (number of clustered poles)');
+xlabel('number of basis functions');
 ylabel('uniform error');
-legend('uniformly random', 'RCS','Location','southwest');
-figurestyle(22); xlim([-inf,n1list(end)]);
-pos = f2.Position; pos(4) = 520; f2.Position = pos;
-ylim([1e-8,1e2]);
-% exportgraphics(f2, "lightningB.pdf", 'ContentType', 'vector');
+figurestyle(20); xlim([-inf,dofs(end)]);
+ylim([1e-7,1e0]);
+% exportgraphics(f2, "lightning_2.pdf", 'ContentType', 'vector');
 
 %% Auxiliary functions 
 function Z = arrayevaluation(f,x)
